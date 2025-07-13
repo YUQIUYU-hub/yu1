@@ -81,10 +81,11 @@ namespace MemoryHook.Core.Services
 
                             var processInfo = ProcessInfo.FromProcess(process);
 
-                            // 确保进程名称不为空
+                            // 验证进程名称（FromProcess方法已经处理了空名称的情况）
                             if (string.IsNullOrEmpty(processInfo.ProcessName))
                             {
-                                processInfo.ProcessName = $"进程_{process.Id}";
+                                _logger.LogWarning("进程名称仍为空，使用后备名称: PID {ProcessId}", process.Id);
+                                processInfo.ProcessName = $"未知进程_{process.Id}";
                             }
 
                             // 调试信息：记录进程名称
@@ -166,20 +167,39 @@ namespace MemoryHook.Core.Services
                 try
                 {
                     using var process = Process.GetProcessById(processId);
+
+                    // 检查进程是否仍然存在
+                    if (process.HasExited)
+                    {
+                        _logger.LogDebug("进程已退出: PID {ProcessId}", processId);
+                        return null;
+                    }
+
                     var processInfo = ProcessInfo.FromProcess(process);
-                    
+
+                    // 验证进程名称
+                    if (string.IsNullOrEmpty(processInfo.ProcessName))
+                    {
+                        _logger.LogWarning("获取到的进程名称为空: PID {ProcessId}", processId);
+                        processInfo.ProcessName = $"未知进程_{processId}";
+                    }
+
                     processInfo.IsSystemProcess = IsSystemProcess(process);
                     processInfo.Architecture = GetProcessArchitectureSync(processId);
-                    
+
                     var accessResult = CheckProcessAccessSync(processId);
                     processInfo.CanAccess = accessResult.CanAccess;
                     processInfo.IsProtectedProcess = IsProtectedProcessSync(processId);
+
+                    _logger.LogDebug("成功获取进程信息: {ProcessName} (PID: {ProcessId})",
+                        processInfo.ProcessName, processId);
 
                     return processInfo;
                 }
                 catch (ArgumentException)
                 {
                     // 进程不存在
+                    _logger.LogDebug("进程不存在: PID {ProcessId}", processId);
                     return null;
                 }
                 catch (Exception ex)
@@ -210,15 +230,30 @@ namespace MemoryHook.Core.Services
 
                         try
                         {
+                            // 检查进程是否仍然存在
+                            if (process.HasExited)
+                                continue;
+
                             var processInfo = ProcessInfo.FromProcess(process);
+
+                            // 验证进程名称
+                            if (string.IsNullOrEmpty(processInfo.ProcessName))
+                            {
+                                _logger.LogWarning("获取到的进程名称为空: PID {ProcessId}", process.Id);
+                                processInfo.ProcessName = $"未知进程_{process.Id}";
+                            }
+
                             processInfo.IsSystemProcess = IsSystemProcess(process);
                             processInfo.Architecture = GetProcessArchitectureSync(process.Id);
-                            
+
                             var accessResult = CheckProcessAccessSync(process.Id);
                             processInfo.CanAccess = accessResult.CanAccess;
                             processInfo.IsProtectedProcess = IsProtectedProcessSync(process.Id);
 
                             processes.Add(processInfo);
+
+                            _logger.LogDebug("按名称获取进程信息: {ProcessName} (PID: {ProcessId})",
+                                processInfo.ProcessName, process.Id);
                         }
                         catch (Exception ex)
                         {

@@ -110,20 +110,78 @@ namespace MemoryHook.Core.Models
         {
             var info = new ProcessInfo
             {
-                ProcessId = process.Id,
-                ProcessName = process.ProcessName
+                ProcessId = process.Id
             };
+
+            // 安全地获取进程名称
+            try
+            {
+                info.ProcessName = process.ProcessName ?? string.Empty;
+
+                // 如果进程名称为空，尝试从文件路径获取
+                if (string.IsNullOrEmpty(info.ProcessName))
+                {
+                    try
+                    {
+                        var fileName = process.MainModule?.FileName;
+                        if (!string.IsNullOrEmpty(fileName))
+                        {
+                            info.ProcessName = System.IO.Path.GetFileNameWithoutExtension(fileName);
+                        }
+                    }
+                    catch
+                    {
+                        // 忽略获取文件名失败的异常
+                    }
+                }
+
+                // 如果仍然为空，使用默认名称
+                if (string.IsNullOrEmpty(info.ProcessName))
+                {
+                    info.ProcessName = $"进程_{process.Id}";
+                }
+            }
+            catch (Exception)
+            {
+                // 如果无法获取进程名称，使用默认名称
+                info.ProcessName = $"进程_{process.Id}";
+            }
+
+            // 安全地获取其他属性
+            try
+            {
+                info.WindowTitle = process.MainWindowTitle ?? string.Empty;
+            }
+            catch
+            {
+                info.WindowTitle = string.Empty;
+            }
 
             try
             {
-                info.WindowTitle = process.MainWindowTitle;
                 info.StartTime = process.StartTime;
+            }
+            catch
+            {
+                info.StartTime = DateTime.MinValue;
+            }
+
+            try
+            {
                 info.MemoryUsage = process.WorkingSet64;
+            }
+            catch
+            {
+                info.MemoryUsage = 0;
+            }
+
+            try
+            {
                 info.FilePath = process.MainModule?.FileName ?? string.Empty;
             }
             catch
             {
-                // 某些系统进程可能无法访问这些属性
+                info.FilePath = string.Empty;
             }
 
             return info;

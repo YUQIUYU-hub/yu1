@@ -401,10 +401,17 @@ namespace MemoryHook.UI.ViewModels
             try
             {
                 StatusMessage = "正在初始化...";
-                // 等待ProcessService的定时器自动刷新进程列表
-                // 不需要手动调用RefreshProcessesAsync，避免重复
-                await Task.Delay(100); // 短暂延迟确保事件订阅完成
+                _logger.LogInformation("开始初始化MainViewModel");
+
+                // 短暂延迟确保事件订阅完成
+                await Task.Delay(100);
+
+                // 手动触发一次进程列表刷新以确保UI有数据
+                _logger.LogDebug("触发初始进程列表刷新");
+                await _processService.RefreshProcessListAsync();
+
                 StatusMessage = "初始化完成";
+                _logger.LogInformation("MainViewModel初始化完成，当前进程数: {Count}", Processes.Count);
             }
             catch (Exception ex)
             {
@@ -495,31 +502,46 @@ namespace MemoryHook.UI.ViewModels
 
         private void FilterProcesses()
         {
-            var view = CollectionViewSource.GetDefaultView(Processes);
+            try
+            {
+                FilteredProcesses.Clear();
 
-            if (string.IsNullOrWhiteSpace(ProcessSearchText))
-            {
-                view.Filter = null;
-            }
-            else
-            {
-                view.Filter = obj =>
+                if (string.IsNullOrWhiteSpace(ProcessSearchText))
                 {
-                    if (obj is ProcessInfo process)
+                    // 如果没有搜索文本，显示所有进程
+                    foreach (var process in Processes)
                     {
-                        return process.ProcessName.Contains(ProcessSearchText, StringComparison.OrdinalIgnoreCase) ||
-                               process.ProcessId.ToString().Contains(ProcessSearchText) ||
-                               (!string.IsNullOrEmpty(process.WindowTitle) &&
-                                process.WindowTitle.Contains(ProcessSearchText, StringComparison.OrdinalIgnoreCase));
+                        FilteredProcesses.Add(process);
                     }
-                    return false;
-                };
-            }
+                }
+                else
+                {
+                    // 根据搜索文本过滤进程
+                    var filteredProcesses = Processes.Where(process =>
+                    {
+                        // 确保进程名称不为空
+                        var processName = process.ProcessName ?? string.Empty;
+                        var windowTitle = process.WindowTitle ?? string.Empty;
+                        var processIdStr = process.ProcessId.ToString();
 
-            FilteredProcesses.Clear();
-            foreach (ProcessInfo process in view)
+                        return processName.Contains(ProcessSearchText, StringComparison.OrdinalIgnoreCase) ||
+                               processIdStr.Contains(ProcessSearchText) ||
+                               (!string.IsNullOrEmpty(windowTitle) &&
+                                windowTitle.Contains(ProcessSearchText, StringComparison.OrdinalIgnoreCase));
+                    });
+
+                    foreach (var process in filteredProcesses)
+                    {
+                        FilteredProcesses.Add(process);
+                    }
+                }
+
+                _logger.LogDebug("进程过滤完成，显示 {FilteredCount}/{TotalCount} 个进程",
+                    FilteredProcesses.Count, Processes.Count);
+            }
+            catch (Exception ex)
             {
-                FilteredProcesses.Add(process);
+                _logger.LogError(ex, "过滤进程列表时发生错误");
             }
         }
 
@@ -567,6 +589,13 @@ namespace MemoryHook.UI.ViewModels
                 // 添加新进程
                 foreach (var process in e.AddedProcesses)
                 {
+                    // 验证进程名称
+                    if (string.IsNullOrEmpty(process.ProcessName))
+                    {
+                        _logger.LogWarning("UI接收到进程名称为空的进程: PID {ProcessId}", process.ProcessId);
+                        process.ProcessName = $"未知进程_{process.ProcessId}";
+                    }
+
                     _logger.LogDebug("UI添加进程: {ProcessName} (PID: {ProcessId})",
                         process.ProcessName, process.ProcessId);
                     Processes.Add(process);
