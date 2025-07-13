@@ -596,8 +596,8 @@ namespace MemoryHook.UI.ViewModels
                         process.ProcessName = $"未知进程_{process.ProcessId}";
                     }
 
-                    _logger.LogDebug("UI添加进程: {ProcessName} (PID: {ProcessId})",
-                        process.ProcessName, process.ProcessId);
+                    _logger.LogDebug("UI添加进程: {ProcessName} (PID: {ProcessId}) - ToString: {ToString}",
+                        process.ProcessName, process.ProcessId, process.ToString());
                     Processes.Add(process);
                 }
 

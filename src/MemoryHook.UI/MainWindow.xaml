@@ -19,9 +19,10 @@
 
     <Window.Resources>
         <!-- 样式资源 -->
-        <Style x:Key="ProcessListItemStyle" TargetType="ListViewItem" BasedOn="{StaticResource MaterialDesignListBoxItem}">
+        <Style x:Key="ProcessListItemStyle" TargetType="ListViewItem">
             <Setter Property="Padding" Value="8"/>
             <Setter Property="Margin" Value="2"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
         </Style>
         
         <Style x:Key="SectionHeaderStyle" TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignHeadline6TextBlock}">
@@ -101,33 +102,40 @@
                                  Margin="0,0,0,8"/>
 
                         <!-- 进程列表 -->
-                        <ListView Grid.Row="2"
+                        <DataGrid Grid.Row="2"
                                   ItemsSource="{Binding FilteredProcesses}"
                                   SelectedItem="{Binding SelectedProcess}"
-                                  ItemContainerStyle="{StaticResource ProcessListItemStyle}">
-                            <ListView.View>
-                                <GridView>
-                                    <GridViewColumn Header="进程名" Width="140">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <materialDesign:PackIcon Kind="Application"
-                                                                           Width="16" Height="16"
-                                                                           VerticalAlignment="Center"
-                                                                           Margin="0,0,4,0"/>
-                                                    <TextBlock Text="{Binding ProcessName}"
-                                                             VerticalAlignment="Center"
-                                                             FontWeight="Medium"/>
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="PID" Width="60" DisplayMemberBinding="{Binding ProcessId}"/>
-                                    <GridViewColumn Header="架构" Width="50" DisplayMemberBinding="{Binding ArchitectureText}"/>
-                                    <GridViewColumn Header="内存" Width="70" DisplayMemberBinding="{Binding MemoryUsageText}"/>
-                                </GridView>
-                            </ListView.View>
-                        </ListView>
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  SelectionMode="Single"
+                                  GridLinesVisibility="Horizontal"
+                                  HeadersVisibility="Column"
+                                  CanUserReorderColumns="False"
+                                  CanUserResizeColumns="True"
+                                  CanUserSortColumns="True"
+                                  Name="ProcessDataGrid">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="进程名" Width="140" SortMemberPath="ProcessName">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="Application"
+                                                                       Width="16" Height="16"
+                                                                       VerticalAlignment="Center"
+                                                                       Margin="0,0,4,0"/>
+                                                <TextBlock Text="{Binding ProcessName, FallbackValue='未知进程', TargetNullValue='空进程名'}"
+                                                         VerticalAlignment="Center"
+                                                         FontWeight="Medium"
+                                                         ToolTip="{Binding DisplayName}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="PID" Width="60" Binding="{Binding ProcessId}" SortMemberPath="ProcessId"/>
+                                <DataGridTextColumn Header="架构" Width="50" Binding="{Binding ArchitectureText}" SortMemberPath="Architecture"/>
+                                <DataGridTextColumn Header="内存" Width="70" Binding="{Binding MemoryUsageText}" SortMemberPath="MemoryUsage"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
                     </Grid>
                 </materialDesign:Card>
 

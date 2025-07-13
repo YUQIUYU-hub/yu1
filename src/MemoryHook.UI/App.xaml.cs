@@ -40,8 +40,13 @@ namespace MemoryHook.UI
                 _host.Start();
 
                 // 创建并显示主窗口
-                var mainWindow = _host.Services.GetRequiredService<MainWindow>();
+                var mainViewModel = _host.Services.GetRequiredService<MainViewModel>();
+                var mainWindow = new MainWindow(mainViewModel);
                 mainWindow.Show();
+
+                // 同时显示测试窗口用于调试
+                var testWindow = new TestWindow();
+                testWindow.Show();
             }
             catch (Exception ex)
             {
@@ -78,9 +83,6 @@ namespace MemoryHook.UI
 
             // 注册视图模型
             services.AddTransient<MainViewModel>();
-
-            // 注册窗口
-            services.AddTransient<MainWindow>();
 
             // 添加日志
             services.AddLogging(builder =>

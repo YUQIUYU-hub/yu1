@@ -84,6 +84,15 @@ namespace MemoryHook.Core.Models
         public string MemoryUsageText => FormatBytes(MemoryUsage);
 
         /// <summary>
+        /// 重写ToString方法，确保在UI中正确显示
+        /// </summary>
+        /// <returns>进程的字符串表示</returns>
+        public override string ToString()
+        {
+            return DisplayName;
+        }
+
+        /// <summary>
         /// 格式化字节数
         /// </summary>
         /// <param name="bytes">字节数</param>
