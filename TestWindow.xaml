@@ -1,0 +1,40 @@
+<Window x:Class="MemoryHook.UI.TestWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="进程列表测试" Height="600" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- 标题 -->
+        <TextBlock Grid.Row="0" Text="进程列表绑定测试" FontSize="16" FontWeight="Bold" Margin="10"/>
+        
+        <!-- 进程列表 -->
+        <ListView Grid.Row="1" x:Name="ProcessListView" Margin="10">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="进程名" Width="200">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding ProcessName}" FontWeight="Medium"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="PID" Width="80" DisplayMemberBinding="{Binding ProcessId}"/>
+                    <GridViewColumn Header="架构" Width="80" DisplayMemberBinding="{Binding ArchitectureText}"/>
+                    <GridViewColumn Header="ToString()" Width="200" DisplayMemberBinding="{Binding}"/>
+                </GridView>
+            </ListView.View>
+        </ListView>
+        
+        <!-- 状态信息 -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="10">
+            <TextBlock Text="进程数量: "/>
+            <TextBlock x:Name="ProcessCountText" FontWeight="Bold"/>
+            <Button x:Name="RefreshButton" Content="刷新" Margin="20,0,0,0" Click="RefreshButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>
